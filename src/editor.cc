@@ -4,6 +4,8 @@
 Editor::Editor(QWidget *parent) : QTextEdit(parent)
 {
 	setAcceptRichText(false);
+ 	legacy = new LegacyEditor(this);
+//	legacy->setMinimumWidth(500);
 	// This needed to avoid QTextEdit accepting filename drops as we want
 	// to handle these ourselves in MainWindow
 	setAcceptDrops(false);
@@ -12,6 +14,7 @@ Editor::Editor(QWidget *parent) : QTextEdit(parent)
 
 void Editor::indentSelection()
 {
+//	indent_Selection();
 	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
@@ -26,6 +29,7 @@ void Editor::indentSelection()
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
 	setTextCursor(cursor);
+
 }
 
 void Editor::unindentSelection()

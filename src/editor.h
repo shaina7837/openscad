@@ -4,7 +4,9 @@
 #include <QWheelEvent>
 #include <QScrollBar>
 #include <QTextEdit>
+#include <string>
 #include "highlighter.h"
+#include "legacyeditor.h"
 
 class Editor : public QTextEdit
 {
@@ -31,5 +33,6 @@ public slots:
 private:
 	void wheelEvent ( QWheelEvent * event );
 	Highlighter *highlighter;
+	LegacyEditor *legacy;
         QSize initialSizeHint;
 };

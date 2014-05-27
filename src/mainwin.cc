@@ -698,7 +698,7 @@ void MainWindow::newDetachWindow()
     {
         ren = new renderWindow(this);
         connect(ren, SIGNAL(passWidget(QGLWidget*)), this, SLOT(receiveWidget(QGLWidget*)));
-     }
+    }
     ren->receiveWidget(newglview);
     ren->show();
     widgetAtHome = false;

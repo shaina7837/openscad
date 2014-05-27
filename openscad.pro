@@ -277,7 +277,8 @@ HEADERS += src/typedefs.h \
            src/CsgInfo.h \
            \
            src/AutoUpdater.h \
-    src/renderwindow.h
+    src/renderwindow.h \
+    src/legacyeditor.h
 
 SOURCES += src/version_check.cc \
            src/ProgressWidget.cc \
@@ -356,7 +357,8 @@ SOURCES += src/version_check.cc \
            \
            src/openscad.cc \
            src/mainwin.cc \
-    src/renderwindow.cpp
+    src/renderwindow.cpp \
+    src/legacyeditor.cc
 
 # ClipperLib
 SOURCES += src/polyclipping/clipper.cpp
