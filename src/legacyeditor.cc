@@ -1,25 +1,18 @@
-#include "editor.h"
+#include "legacyeditor.h"
 #include "Preferences.h"
 
-Editor::Editor(QWidget *parent) : QWidget(parent)
+LegacyEditor::LegacyEditor(QWidget *parent) : QTextEdit(parent)
 {
-	legacyeditorLayout = new QVBoxLayout(this);
- 	legacy = new LegacyEditor(this);
-	legacyeditorLayout->addWidget(legacy);
-	legacy->setAcceptRichText(false);
-
-//	legacy->setMinimumWidth(500);
-	
+	setAcceptRichText(false);
 	// This needed to avoid QTextEdit accepting filename drops as we want
 	// to handle these ourselves in MainWindow
 	setAcceptDrops(false);
-	this->highlighter = new Highlighter(this->legacy->document());
+	this->highlighter = new Highlighter(this->document());
 }
 
-void Editor::indentSelection()
+void LegacyEditor::indentSelection()
 {
-	legacy->indentSelection();
-/*	QTextCursor cursor = textCursor();
+	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
 
@@ -33,13 +26,10 @@ void Editor::indentSelection()
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
 	setTextCursor(cursor);
-*/
 }
 
-void Editor::unindentSelection()
+void LegacyEditor::unindentSelection()
 {
-	legacy->unindentSelection();
-/*
 	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
@@ -53,13 +43,10 @@ void Editor::unindentSelection()
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
 	setTextCursor(cursor);
-*/
 }
 
-void Editor::commentSelection()
+void LegacyEditor::commentSelection()
 {
-	legacy->commentSelection();
-/*
 	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
@@ -74,13 +61,10 @@ void Editor::commentSelection()
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
 	setTextCursor(cursor);
-*/
 }
 
-void Editor::uncommentSelection()
+void LegacyEditor::uncommentSelection()
 {
-	legacy->uncommentSelection();
-/*
 	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
@@ -94,14 +78,12 @@ void Editor::uncommentSelection()
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
 	setTextCursor(cursor);
-*/
 }
 
-void Editor::zoomIn()
+void LegacyEditor::zoomIn()
 {
-	legacy->zoomIn();
-	// See also QT's implementation in QEditor.cpp
-/*	QSettings settings;
+	// See also QT's implementation in QLegacyEditor.cpp
+	QSettings settings;
 	QFont tmp_font = this->font() ;
 	if ( font().pointSize() >= 1 )
 		tmp_font.setPointSize( 1 + font().pointSize() );
@@ -109,13 +91,10 @@ void Editor::zoomIn()
 		tmp_font.setPointSize( 1 );
 	settings.setValue("editor/fontsize", tmp_font.pointSize());
 	this->setFont( tmp_font );
-*/
 }
 
-void Editor::zoomOut()
+void LegacyEditor::zoomOut()
 {
-	legacy->zoomOut();
-/*
 	QSettings settings;
 	QFont tmp_font = this->font();
 	if ( font().pointSize() >= 2 )
@@ -124,13 +103,10 @@ void Editor::zoomOut()
 		tmp_font.setPointSize( 1 );
 	settings.setValue("editor/fontsize", tmp_font.pointSize());
 	this->setFont( tmp_font );
-*/
 }
 
-void Editor::wheelEvent ( QWheelEvent * event )
+void LegacyEditor::wheelEvent ( QWheelEvent * event )
 {
-	legacy->wheelEvent(event);
-/*
 	QSettings settings;
 	bool wheelzoom_enabled = Preferences::inst()->getValue("editor/ctrlmousewheelzoom").toBool();
 	if ((event->modifiers() == Qt::ControlModifier) && wheelzoom_enabled ) {
@@ -141,13 +117,10 @@ void Editor::wheelEvent ( QWheelEvent * event )
 	} else {
 		QTextEdit::wheelEvent( event );
 	}
-*/
 }
 
-void Editor::setPlainText(const QString &text)
+void LegacyEditor::setPlainText(const QString &text)
 {
-	legacy->setPlainText(text);
-/*
 	int y = verticalScrollBar()->sliderPosition();
 	// Save current cursor position
 	QTextCursor cursor = textCursor();
@@ -159,99 +132,42 @@ void Editor::setPlainText(const QString &text)
 		setTextCursor(cursor);
 		verticalScrollBar()->setSliderPosition(y);
 	}
-*/
 }
 
-void Editor::highlightError(int error_pos)
+void LegacyEditor::highlightError(int error_pos)
 {
-	legacy->highlightError(error_pos);
-/*
 	highlighter->highlightError( error_pos );
         QTextCursor cursor = this->textCursor();
         cursor.setPosition( error_pos );
         this->setTextCursor( cursor );
-*/
 }
 
-void Editor::unhighlightLastError()
+void LegacyEditor::unhighlightLastError()
 {
-	legacy->unhighlightLastError();
-//	highlighter->unhighlightLastError();
+	highlighter->unhighlightLastError();
 }
 
-void Editor::setHighlightScheme(const QString &name)
+void LegacyEditor::setHighlightScheme(const QString &name)
 {
-	legacy->setHighlightScheme(name);
-/*
 	highlighter->assignFormatsToTokens( name );
 	highlighter->rehighlight(); // slow on large files
-*/
 }
 
-QSize Editor::sizeHint() const
+QSize LegacyEditor::sizeHint() const
 {
-	legacy->sizeHint();
-/*
 	if (initialSizeHint.width() <= 0) {
 		return QTextEdit::sizeHint();
 	} else {
 		return initialSizeHint;
 	}
-*/
 }
 
-void Editor::setInitialSizeHint(const QSize &size)
+void LegacyEditor::setInitialSizeHint(const QSize &size)
 {
-	legacy->setInitialSizeHint(size);
-//	initialSizeHint = size;
-}
- 
-void Editor::setTabStopWidth(int width)
-{
-	legacy->setTabStopWidth(width);
+	initialSizeHint = size;
 }
 
-QString Editor::toPlainText()
-{
-	legacy->toPlainText();
-}
-QTextCursor Editor::textCursor() const
-{
-	legacy->textCursor();
-}
-void Editor::setTextCursor (const QTextCursor &cursor)
-{
-	legacy->setTextCursor(cursor);
-}
-bool Editor::find(const QString & exp, QTextDocument::FindFlags options)
-{
-	legacy->find(exp, options);
-}
-void Editor::insertPlainText(const QString &text)
-{
-	legacy->insertPlainText(text);
-}
-void Editor::undo()
-{
-	legacy->undo();
-}
-void Editor::redo()
-{
-	legacy->redo();
-}
-void Editor::cut()
-{
-	legacy->cut();
-}
-void Editor::copy()
-{
-	legacy->copy();
-}
-void Editor::paste()
-{
-	legacy->paste();
-}
-Editor::~Editor()
+LegacyEditor::~LegacyEditor()
 {
 	delete highlighter;
 }

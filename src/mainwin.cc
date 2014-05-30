@@ -593,7 +593,7 @@ void
 MainWindow::openFile(const QString &new_filename)
 {
 	if (MainWindow::mdiMode) {
-		if (!editor->toPlainText().isEmpty()) {
+		if (!editor->legacy->toPlainText().isEmpty()) {  //removing legacy-> cause seg fault :(
 			new MainWindow(new_filename);
 			return;
 		}
@@ -1418,7 +1418,8 @@ void MainWindow::compileTopLevelDocument()
 	updateTemporalVariables();
 	resetPrintedDeprecations();
 
-	this->last_compiled_doc = editor->toPlainText();
+	this->last_compiled_doc = editor->legacy->toPlainText(); //removing legacy-> cause seg fault :(
+
 	std::string fulltext =
 		std::string(this->last_compiled_doc.toLocal8Bit().constData()) +
 		"\n" + commandline_commands;
@@ -2005,7 +2006,7 @@ void MainWindow::viewModeAnimate()
 
 void MainWindow::animateUpdateDocChanged()
 {
-	QString current_doc = editor->toPlainText();
+	QString current_doc = editor->legacy->toPlainText(); //removing legacy-> cause seg fault :(
 	if (current_doc != last_compiled_doc)
 		animateUpdate();
 }
