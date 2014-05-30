@@ -193,13 +193,10 @@ FORMS   += src/MainWindow.ui \
            src/Preferences.ui \
            src/OpenCSGWarningDialog.ui \
            src/AboutDialog.ui \
-<<<<<<< HEAD
            src/ProgressWidget.ui \
-    src/renderwindow.ui
-=======
+           src/renderwindow.ui \
            src/FontListDialog.ui \
            src/ProgressWidget.ui
->>>>>>> ca3ff7cf6669e0bcff969fd7a43e2c7f650f0d52
 
 HEADERS += src/typedefs.h \
            src/version_check.h \
@@ -374,12 +371,9 @@ SOURCES += src/version_check.cc \
            \
            src/openscad.cc \
            src/mainwin.cc \
-<<<<<<< HEAD
     src/renderwindow.cpp \
-    src/legacyeditor.cc
-=======
+    src/legacyeditor.cc \
 	   src/FontListDialog.cc
->>>>>>> ca3ff7cf6669e0bcff969fd7a43e2c7f650f0d52
 
 # ClipperLib
 SOURCES += src/polyclipping/clipper.cpp
