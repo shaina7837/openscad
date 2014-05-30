@@ -105,7 +105,11 @@ private:
 	void setDockWidgetTitle(QDockWidget *dockWidget, QString prefix, bool topLevel);
 
   class QMessageBox *openglbox;
+<<<<<<< HEAD
         renderWindow *ren;
+=======
+  class FontListDialog *font_list_dialog;
+>>>>>>> ca3ff7cf6669e0bcff969fd7a43e2c7f650f0d52
 
 private slots:
 	void actionUpdateCheck();
@@ -214,6 +218,7 @@ public slots:
 	void helpHomepage();
 	void helpManual();
 	void helpLibrary();
+	void helpFontInfo();
 	void quit();
 	void checkAutoReload();
 	void waitAfterReload();

@@ -255,6 +255,7 @@
     <addaction name="helpActionHomepage"/>
     <addaction name="helpActionManual"/>
     <addaction name="helpActionLibraryInfo"/>
+    <addaction name="helpActionFontInfo"/>
     <addaction name="appActionUpdateCheck"/>
    </widget>
    <addaction name="menu_File"/>
@@ -933,6 +934,11 @@
   <action name="viewActionResetView">
    <property name="text">
     <string>Reset View</string>
+   </property>
+  </action>
+  <action name="helpActionFontInfo">
+   <property name="text">
+    <string>Font List</string>
    </property>
   </action>
   <action name="designActionExportSVG">

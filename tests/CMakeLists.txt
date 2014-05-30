@@ -382,6 +382,11 @@ set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/parser_yacc.c PROPERTIES
 
 # CGAL
 
+# Disable rounding math check to allow usage of Valgrind
+# This is needed as Valgrind currently does not correctly
+# handle rounding modes used by CGAL.
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCGAL_DISABLE_ROUNDING_MATH_CHECK=ON")
+
 if (NOT $ENV{CGALDIR} STREQUAL "")
   set(CGAL_DIR "$ENV{CGALDIR}")
 elseif (NOT $ENV{OPENSCAD_LIBRARIES} STREQUAL "")
@@ -447,6 +452,36 @@ endif()
 find_package(GLIB2 2.2.0 REQUIRED)
 add_definitions(${GLIB2_DEFINITIONS})
 inclusion(GLIB2_DIR GLIB2_INCLUDE_DIRS)
+
+# find libraries using pkg-config
+find_package(PkgConfig REQUIRED)
+include(PkgConfigTools.cmake)
+save_pkg_config_env()
+
+if (DEFINED ENV{OPENSCAD_LIBRARIES})
+  set(ENV{PKG_CONFIG_PATH} "$ENV{OPENSCAD_LIBRARIES}/lib/pkgconfig")
+endif()
+
+pkg_check_modules(FONTCONFIG REQUIRED fontconfig>=2.8.0)
+if (FONTCONFIG_VERSION)
+  message(STATUS "fontconfig ${FONTCONFIG_VERSION} found: ${FONTCONFIG_INCLUDE_DIRS}")
+endif()
+
+pkg_check_modules(FREETYPE REQUIRED freetype2>=2.4.9)
+if (FREETYPE_VERSION)
+  message(STATUS "freetype2 ${FREETYPE_VERSION} found: ${FREETYPE_INCLUDE_DIRS}")
+endif()
+
+pkg_check_modules(HARFBUZZ REQUIRED harfbuzz>=0.9.19)
+if (HARFBUZZ_VERSION)
+  message(STATUS "harfbuzz ${HARFBUZZ_VERSION} found: ${HARFBUZZ_INCLUDE_DIRS}")
+endif()
+
+restore_pkg_config_env()
+
+add_definitions(${FONTCONFIG_CFLAGS})
+add_definitions(${FREETYPE_CFLAGS})
+add_definitions(${HARFBUZZ_CFLAGS})
 
 # Imagemagick
 
@@ -568,10 +603,14 @@ set(CORE_SOURCES
   ../src/offset.cc 
   ../src/linearextrude.cc 
   ../src/rotateextrude.cc 
+  ../src/text.cc 
   ../src/printutils.cc 
   ../src/fileutils.cc 
   ../src/progress.cc 
   ../src/boost-utils.cc 
+  ../src/FontCache.cc
+  ../src/DrawingCallback.cc
+  ../src/FreetypeRenderer.cc
   ../src/PlatformUtils.cc 
   ../src/lodepng.cpp
   ../src/${PLATFORMUTILS_SOURCE}
@@ -638,16 +677,14 @@ if(NULLGL)
 endif()
 
 add_library(tests-core STATIC ${CORE_SOURCES})
-target_link_libraries(tests-core ${OPENGL_LIBRARIES} ${GLIB2_LIBRARIES} )
-set(TESTS-CORE-LIBRARIES ${OPENGL_LIBRARIES} ${GLIB2_LIBRARIES} ${Boost_LIBRARIES} ${COCOA_LIBRARY})
+target_link_libraries(tests-core ${OPENGL_LIBRARIES} ${GLIB2_LIBRARIES} ${FONTCONFIG_LDFLAGS} ${FREETYPE_LDFLAGS} ${HARFBUZZ_LDFLAGS} ${Boost_LIBRARIES} ${COCOA_LIBRARY})
 
 add_library(tests-common STATIC ${COMMON_SOURCES})
 target_link_libraries(tests-common tests-core)
 
 add_library(tests-cgal STATIC ${CGAL_SOURCES})
 set_target_properties(tests-cgal PROPERTIES COMPILE_FLAGS "-DENABLE_CGAL ${CGAL_CXX_FLAGS_INIT}")
-target_link_libraries(tests-cgal tests-common)
-set(TESTS-CGAL-LIBRARIES ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES} ${MPFR_LIBRARIES} ${TESTS-CORE-LIBRARIES})
+target_link_libraries(tests-cgal tests-common ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
 
 #
 # Create non-CGAL tests
@@ -655,14 +692,12 @@ set(TESTS-CGAL-LIBRARIES ${CGAL_LIBRARY} ${CGAL_3RD_PARTY_LIBRARIES} ${GMP_LIBRA
 if (NOT NULLGL)
   add_library(tests-nocgal STATIC ${NOCGAL_SOURCES})
   target_link_libraries(tests-nocgal tests-common)
-  set(TESTS-NOCGAL-LIBRARIES ${TESTS-CORE-LIBRARIES})
 else()
   message(STATUS "NULLGL: cannot use GL/GLU tessellator. see dxftess.cc")
   message(STATUS "NULLGL: non-CGAL tests will use CGAL's tessellator")
   add_library(tests-nocgal STATIC ${CGAL_SOURCES})
   set_target_properties(tests-nocgal PROPERTIES COMPILE_FLAGS "-DENABLE_CGAL ${CGAL_CXX_FLAGS_INIT}")
   target_link_libraries(tests-nocgal tests-common)
-  set(TESTS-NOCGAL-LIBRARIES ${TESTS-CGAL-LIBRARIES})
 endif()
 
 add_library(tests-offscreen STATIC ${OFFSCREEN_SOURCES})
@@ -672,27 +707,51 @@ set_target_properties(tests-offscreen PROPERTIES COMPILE_FLAGS "${ENABLE_OPENCSG
 # modulecachetest
 #
 add_executable(modulecachetest modulecachetest.cc)
-target_link_libraries(modulecachetest tests-nocgal ${TESTS-NOCGAL-LIBRARIES})
+target_link_libraries(modulecachetest tests-nocgal)
 
 #
 # csgtexttest
 #
 add_executable(csgtexttest csgtexttest.cc CSGTextRenderer.cc CSGTextCache.cc)
-target_link_libraries(csgtexttest tests-nocgal ${TESTS-NOCGAL-LIBRARIES})
+target_link_libraries(csgtexttest tests-nocgal)
 
 #
 # cgalcachetest
 #
 add_executable(cgalcachetest cgalcachetest.cc)
 set_target_properties(cgalcachetest PROPERTIES COMPILE_FLAGS "-DENABLE_CGAL ${CGAL_CXX_FLAGS_INIT}")
-target_link_libraries(cgalcachetest tests-cgal ${TESTS-CGAL-LIBRARIES} ${GLEW_LIBRARY})
+target_link_libraries(cgalcachetest tests-cgal ${GLEW_LIBRARY})
 
 #
 # openscad no-qt
 #
 add_executable(openscad_nogui ../src/openscad.cc)
-set_target_properties(openscad_nogui PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -DEIGEN_DONT_ALIGN -DENABLE_CGAL ${ENABLE_OPENCSG_FLAG} ${CGAL_CXX_FLAGS_INIT}")
-target_link_libraries(openscad_nogui tests-offscreen tests-cgal tests-nocgal ${TESTS-CORE-LIBRARIES} ${TESTS-CGAL-LIBRARIES} ${GLEW_LIBRARY} ${Boost_LIBRARIES} ${OPENCSG_LIBRARY} ${COCOA_LIBRARY} ${APP_SERVICES_LIBRARY})
+set_target_properties(openscad_nogui PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -DEIGEN_DONT_ALIGN -DENABLE_CGAL -DENABLE_OPENCSG ${CGAL_CXX_FLAGS_INIT}")
+target_link_libraries(openscad_nogui tests-offscreen tests-cgal tests-nocgal ${GLEW_LIBRARY} ${OPENCSG_LIBRARY} ${APP_SERVICES_LIBRARY})
+
+#
+# GUI binary tests
+#
+#if(APPLE)
+#  set(OPENSCAD_BINPATH "${CMAKE_CURRENT_SOURCE_DIR}/../OpenSCAD.app/Contents/MacOS/OpenSCAD")
+#elseif (MINGW_CROSS_ENV_DIR) 
+#  set(OPENSCAD_BINPATH "${CMAKE_CURRENT_SOURCE_DIR}/../mingw32/release/openscad.exe")
+#elseif(WIN32)
+#  set(OPENSCAD_BINPATH "${CMAKE_CURRENT_SOURCE_DIR}/../Release/openscad.exe")
+#else()
+#  set(OPENSCAD_BINPATH "${CMAKE_CURRENT_SOURCE_DIR}/../openscad")
+#endif()
+
+#if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/openscad")
+#  set(OPENSCAD_BINPATH "${CMAKE_CURRENT_BINARY_DIR}/openscad")
+#endif()
+
+#if(EXISTS "${OPENSCAD_BINPATH}")
+#  message(STATUS "Found OpenSCAD binary: ${OPENSCAD_BINPATH}")
+#else()
+#  message(STATUS "Couldn't find the OpenSCAD binary: ${OPENSCAD_BINPATH}")
+#  message(FATAL_ERROR "Please build the OpenSCAD binary and place it here: ${OPENSCAD_BINPATH}" )
+#endif()
 
 if(WIN32)
   set(OPENSCAD_BINPATH "${CMAKE_CURRENT_BINARY_DIR}/openscad_nogui.exe")
@@ -764,11 +823,12 @@ endfunction()
 # This functions adds cmd-line tests given files.
 #
 # Usage add_cmdline_test(testbasename [EXE <executable>] [ARGS <args to exe>]
+#                        [SCRIPT <script>]
 #                        [EXPECTEDDIR <shared dir>] SUFFIX <suffix> FILES <test files>)
 #
 find_package(PythonInterp)
 function(add_cmdline_test TESTCMD_BASENAME)
-  cmake_parse_arguments(TESTCMD "" "EXE;SUFFIX;EXPECTEDDIR" "FILES;ARGS" ${ARGN})
+  cmake_parse_arguments(TESTCMD "" "EXE;SCRIPT;SUFFIX;EXPECTEDDIR" "FILES;ARGS" ${ARGN})
 
   # If sharing results with another test, pass on this to the python script
   if (TESTCMD_EXPECTEDDIR)
@@ -807,7 +867,7 @@ function(add_cmdline_test TESTCMD_BASENAME)
         set(FILENAME_OPTION -f ${FILE_BASENAME})
       endif()
 
-      add_test(NAME ${TEST_FULLNAME} ${CONFARG} ${CONFVAL} COMMAND ${PYTHON_EXECUTABLE} ${tests_SOURCE_DIR}/test_cmdline_tool.py --comparator=${COMPARATOR} -c ${ImageMagick_convert_EXECUTABLE} -s ${TESTCMD_SUFFIX} ${EXTRA_OPTIONS} ${TESTNAME_OPTION} ${FILENAME_OPTION} ${TESTCMD_EXE} "${SCADFILE}" ${TESTCMD_ARGS})
+      add_test(NAME ${TEST_FULLNAME} ${CONFARG} ${CONFVAL} COMMAND ${PYTHON_EXECUTABLE} ${tests_SOURCE_DIR}/test_cmdline_tool.py --comparator=${COMPARATOR} -c ${ImageMagick_convert_EXECUTABLE} -s ${TESTCMD_SUFFIX} ${EXTRA_OPTIONS} ${TESTNAME_OPTION} ${FILENAME_OPTION} ${TESTCMD_EXE} ${TESTCMD_SCRIPT} "${SCADFILE}" ${TESTCMD_ARGS})
       set_property(TEST ${TEST_FULLNAME} PROPERTY ENVIRONMENT "${CTEST_ENVIRONMENT}")
     endif()
   endforeach()
@@ -857,6 +917,7 @@ list(APPEND ECHO_FILES ${FUNCTION_FILES}
             ${CMAKE_SOURCE_DIR}/../testdata/scad/misc/parent_module-tests.scad
             ${CMAKE_SOURCE_DIR}/../testdata/scad/misc/children-tests.scad
             ${CMAKE_SOURCE_DIR}/../testdata/scad/misc/range-tests.scad
+            ${CMAKE_SOURCE_DIR}/../testdata/scad/misc/no-break-space-test.scad
             ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/empty-stl.scad)
 
 list(APPEND DUMPTEST_FILES ${FEATURES_FILES})
@@ -892,21 +953,43 @@ disable_tests(opencsgtest_child-background)
 disable_tests(cgalpngtest_child-background
               cgalpngtest_highlight-and-background-modifier
               cgalpngtest_testcolornames
-              openscad-cgalpng_child-background
-              openscad-cgalpng_highlight-and-background-modifier
-              openscad-cgalpng_testcolornames
+              csgpngtest_child-background
+              csgpngtest_highlight-and-background-modifier
+              csgpngtest_testcolornames
               throwntogethertest_testcolornames)
+
+# The inf/nan tests fail when exporting CSG and rendering that output again
+# as currently inf/nan is written directly to the CSG file (e.g. r = inf)
+# which is not valid or even misleading in case a variable inf exists.
+# FIXME: define export behavior for inf/nan when exporting CSG files
+disable_tests(csgpngtest_primitive-inf-tests csgpngtest_transform-nan-inf-tests)
 
 # Test config handling
 
 # Heavy tests are tests taking more than 10 seconds on a development computer
 set_test_config(Heavy cgalpngtest_rotate_extrude-tests
-                      cgalpngtest_sphere-tests
+                      csgpngtest_rotate_extrude-tests
                       cgalpngtest_for-nested-tests
+                      csgpngtest_for-nested-tests
                       cgalpngtest_resize-tests
+                      cgalpngtest_text-search-test
+		      cgalpngtest_text-font-direction-tests
+		      cgalpngtest_text-font-tests
+		      cgalpngtest_text-font-alignment-tests
+		      opencsgtest_text-font-direction-tests
+		      opencsgtest_text-font-tests
+		      opencsgtest_text-font-alignment-tests
+		      throwntogethertest_text-font-direction-tests
+		      throwntogethertest_text-font-tests
+		      throwntogethertest_text-font-alignment-tests
                       cgalpngtest_fractal
+                      csgpngtest_fractal
                       cgalpngtest_iteration
-                      cgalpngtest_linear_extrude-scale-zero-tests)
+                      csgpngtest_iteration
+                      cgalpngtest_linear_extrude-scale-zero-tests
+                      csgpngtest_linear_extrude-scale-zero-tests
+                      cgalpngtest_sphere-tests
+                      csgpngtest_resize-tests)
 
 # Bugs
 
@@ -920,7 +1003,8 @@ list(APPEND BUGS_FILES ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue495.scad
                        ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue591.scad
                        ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue612.scad
                        ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue112.scad
-                       ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue666.scad)
+                       ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue666.scad
+                       ${CMAKE_SOURCE_DIR}/../testdata/scad/bugs/issue802.scad)
 
 list(APPEND OPENCSGTEST_FILES ${BUGS_FILES})
 list(APPEND CGALPNGTEST_FILES ${BUGS_FILES})
@@ -928,6 +1012,8 @@ foreach(FILE ${BUGS_FILES})
   get_test_fullname(opencsgtest ${FILE} TEST_FULLNAME)
   set_test_config(Bugs ${TEST_FULLNAME})
   get_test_fullname(cgalpngtest ${FILE} TEST_FULLNAME)
+  set_test_config(Bugs ${TEST_FULLNAME})
+  get_test_fullname(csgpngtest ${FILE} TEST_FULLNAME)
   set_test_config(Bugs ${TEST_FULLNAME})
 endforeach()
 
@@ -940,9 +1026,7 @@ foreach(FILE ${EXAMPLE_FILES})
   set_test_config(Examples ${TEST_FULLNAME})
   get_test_fullname(throwntogethertest ${FILE} TEST_FULLNAME)
   set_test_config(Examples ${TEST_FULLNAME})
-  get_test_fullname(openscad-cgalpng ${FILE} TEST_FULLNAME)
-  set_test_config(Examples ${TEST_FULLNAME})
-  get_test_fullname(openscad-csgpng ${FILE} TEST_FULLNAME)
+  get_test_fullname(csgpngtest ${FILE} TEST_FULLNAME)
   set_test_config(Examples ${TEST_FULLNAME})
 endforeach()
 
@@ -1008,6 +1092,7 @@ add_cmdline_test(dumptest EXE ${OPENSCAD_BINPATH} ARGS -o SUFFIX csg FILES ${DUM
 add_cmdline_test(dumptest-examples EXE ${OPENSCAD_BINPATH} ARGS -o SUFFIX csg FILES ${EXAMPLE_FILES})
 add_cmdline_test(cgalpngtest EXE ${OPENSCAD_BINPATH} ARGS --render -o SUFFIX png FILES ${CGALPNGTEST_FILES})
 add_cmdline_test(opencsgtest EXE ${OPENSCAD_BINPATH} ARGS -o SUFFIX png FILES ${OPENCSGTEST_FILES})
+add_cmdline_test(csgpngtest EXE ${PYTHON_EXECUTABLE} SCRIPT csg-import-test.py ARGS ${OPENSCAD_BINPATH} EXPECTEDDIR cgalpngtest SUFFIX png FILES ${CGALPNGTEST_FILES})
 add_cmdline_test(throwntogethertest EXE ${OPENSCAD_BINPATH} ARGS --preview=throwntogether -o SUFFIX png FILES ${THROWNTOGETHERTEST_FILES})
 # FIXME: We don't actually need to compare the output of cgalstlsanitytest
 # with anything. It's self-contained and returns != 0 on error
@@ -1017,6 +1102,16 @@ add_cmdline_test(cgalstlsanitytest EXE ${CMAKE_SOURCE_DIR}/cgalstlsanitytest SUF
 
 add_cmdline_test(echotest EXE ${OPENSCAD_BINPATH} ARGS --enable=concat -o SUFFIX echo FILES ${CMAKE_SOURCE_DIR}/../testdata/scad/experimental/concat-tests.scad)
 
+list(APPEND EXPERIMENTAL_TEXT_FILES 
+            ${CMAKE_SOURCE_DIR}/../testdata/scad/experimental/text-font-alignment-tests.scad
+            ${CMAKE_SOURCE_DIR}/../testdata/scad/experimental/text-font-direction-tests.scad
+            ${CMAKE_SOURCE_DIR}/../testdata/scad/experimental/text-font-simple-tests.scad
+            ${CMAKE_SOURCE_DIR}/../testdata/scad/experimental/text-font-tests.scad
+            ${CMAKE_SOURCE_DIR}/../testdata/scad/experimental/text-search-test.scad)
+
+add_cmdline_test(cgalpngtest EXE ${OPENSCAD_BINPATH} ARGS --render --enable=text -o SUFFIX png FILES ${EXPERIMENTAL_TEXT_FILES})
+add_cmdline_test(opencsgtest EXE ${OPENSCAD_BINPATH} ARGS --enable=text -o SUFFIX png FILES ${EXPERIMENTAL_TEXT_FILES})
+add_cmdline_test(throwntogethertest EXE ${OPENSCAD_BINPATH} ARGS --preview=throwntogether --enable=text -o SUFFIX png FILES ${EXPERIMENTAL_TEXT_FILES})
 
 # Tests using the actual OpenSCAD binary
 
