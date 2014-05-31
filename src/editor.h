@@ -1,12 +1,11 @@
+#pragma once
 #include <QObject>
 #include <QString>
 #include <QWidget>
 #include <QWheelEvent>
 #include <QScrollBar>
 #include <QTextEdit>
-#include <QVBoxLayout>
 #include "highlighter.h"
-#include "legacyeditor.h"
 
 class Editor : public QWidget
 {
@@ -14,39 +13,38 @@ class Editor : public QWidget
 public:
 	Editor(QWidget *parent);
 	~Editor();
-	LegacyEditor *legacy;
-        QSize sizeHint() const;
-        void setInitialSizeHint(const QSize &size);
-	void setTabStopWidth(int width);
-	QString	toPlainText();
-	QTextCursor textCursor() const;
-	void setTextCursor (const QTextCursor &cursor);
-	QTextDocument *document() { legacy->document(); }
-	bool find(const QString & exp, QTextDocument::FindFlags options = 0);
+        virtual QSize sizeHint(){ QSize size; return size;}
+        virtual void setInitialSizeHint(const QSize &size) { }
+	virtual void wheelEvent ( QWheelEvent * event ) { }
+        virtual void setTabStopWidth(int width) { }
+        virtual QString toPlainText() { QString s; return s;}
+        virtual QTextCursor textCursor() { QTextCursor c; return c;}
+        virtual void setTextCursor (const QTextCursor &cursor) { }
+        virtual QTextDocument *document(){QTextDocument *t = new QTextDocument; return t;}
+        virtual bool find(const QString & exp, QTextDocument::FindFlags options = 0){ return options;}
+
 public slots:
-	void zoomIn();
-	void zoomOut();
-	void setLineWrapping(bool on) { legacy->setLineWrapping(on); }
-	void setContentModified(bool y) { legacy->setContentModified(y); }
-	bool isContentModified() { legacy->isContentModified(); }
-	void indentSelection();
-	void unindentSelection();
-	void commentSelection();
-	void uncommentSelection();
-	void setPlainText(const QString &text);
-	void highlightError(int error_pos);
-	void unhighlightLastError();
-	void setHighlightScheme(const QString &name);
-	void insertPlainText(const QString &text);
-	void wheelEvent (QWheelEvent * event);
-	void undo();
-	void redo();
-	void cut();
-	void copy();
-	void paste();
+	virtual void zoomIn(){ }
+        virtual void zoomOut() { }
+        virtual void setLineWrapping(bool on) { }
+        virtual void setContentModified(bool y){ }
+        virtual bool isContentModified(){ } 
+        virtual void indentSelection(){ }
+        virtual void unindentSelection(){ }
+        virtual void commentSelection() {}
+        virtual void uncommentSelection(){}
+        virtual void setPlainText(const QString &text){ }
+        virtual void highlightError(int error_pos) {}
+        virtual void unhighlightLastError() {}
+        virtual void setHighlightScheme(const QString &name){ }
+	virtual void insertPlainText(const QString &text){ }
+	virtual void undo(){ }
+        virtual void redo(){ }
+        virtual void cut(){ }
+        virtual void copy(){ }
+        virtual void paste(){ }
 private:
-	Highlighter *highlighter;
-	//LegacyEditor *legacy;
-        QSize initialSizeHint;
-	QVBoxLayout *legacyeditorLayout;
+        Highlighter *highlighter;
+	QSize initialSizeHint;
+
 };

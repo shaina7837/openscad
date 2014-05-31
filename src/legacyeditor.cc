@@ -1,17 +1,26 @@
 #include "legacyeditor.h"
 #include "Preferences.h"
 
-LegacyEditor::LegacyEditor(QWidget *parent) : QTextEdit(parent)
+LegacyEditor::LegacyEditor(QWidget *parent) : Editor(parent)
 {
-	setAcceptRichText(false);
+/*	textediteditorLayout = new QVBoxLayout(this);
+ 	textedit = new LegacyLegacyEditor(this);
+	textediteditorLayout->addWidget(textedit);
+	textedit->setAcceptRichText(false);
+*/
+//	textedit->setMinimumWidth(500);
+	
 	// This needed to avoid QTextEdit accepting filename drops as we want
 	// to handle these ourselves in MainWindow
+	textedit = new QTextEdit(this);
+	textedit->setAcceptRichText(false);
 	setAcceptDrops(false);
-	this->highlighter = new Highlighter(this->document());
+	this->highlighter = new Highlighter(this->textedit->document());
 }
 
 void LegacyEditor::indentSelection()
 {
+	
 	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
@@ -25,7 +34,8 @@ void LegacyEditor::indentSelection()
 	int p2 = cursor.position();
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
-	setTextCursor(cursor);
+	textedit->setTextCursor(cursor);
+
 }
 
 void LegacyEditor::unindentSelection()
@@ -42,7 +52,7 @@ void LegacyEditor::unindentSelection()
 	int p2 = cursor.position();
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
-	setTextCursor(cursor);
+	textedit->setTextCursor(cursor);
 }
 
 void LegacyEditor::commentSelection()
@@ -60,7 +70,8 @@ void LegacyEditor::commentSelection()
 	int p2 = cursor.position();
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
-	setTextCursor(cursor);
+	textedit->setTextCursor(cursor);
+
 }
 
 void LegacyEditor::uncommentSelection()
@@ -77,7 +88,7 @@ void LegacyEditor::uncommentSelection()
 	int p2 = cursor.position();
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
-	setTextCursor(cursor);
+	textedit->setTextCursor(cursor);
 }
 
 void LegacyEditor::zoomIn()
@@ -95,6 +106,7 @@ void LegacyEditor::zoomIn()
 
 void LegacyEditor::zoomOut()
 {
+
 	QSettings settings;
 	QFont tmp_font = this->font();
 	if ( font().pointSize() >= 2 )
@@ -103,6 +115,7 @@ void LegacyEditor::zoomOut()
 		tmp_font.setPointSize( 1 );
 	settings.setValue("editor/fontsize", tmp_font.pointSize());
 	this->setFont( tmp_font );
+
 }
 
 void LegacyEditor::wheelEvent ( QWheelEvent * event )
@@ -115,22 +128,23 @@ void LegacyEditor::wheelEvent ( QWheelEvent * event )
 		else if (event->delta() < 0 )
 			zoomOut();
 	} else {
-		QTextEdit::wheelEvent( event );
+		QWidget::wheelEvent( event );
 	}
 }
 
 void LegacyEditor::setPlainText(const QString &text)
 {
-	int y = verticalScrollBar()->sliderPosition();
+
+	int y = textedit->verticalScrollBar()->sliderPosition();
 	// Save current cursor position
 	QTextCursor cursor = textCursor();
 	int n = cursor.position();
-	QTextEdit::setPlainText(text);
+	/*QTextEdit::*/textedit->setPlainText(text);
 	// Restore cursor position
 	if (n < text.length()) {
 		cursor.setPosition(n);
-		setTextCursor(cursor);
-		verticalScrollBar()->setSliderPosition(y);
+		textedit->setTextCursor(cursor);
+		textedit->verticalScrollBar()->setSliderPosition(y);
 	}
 }
 
@@ -140,6 +154,7 @@ void LegacyEditor::highlightError(int error_pos)
         QTextCursor cursor = this->textCursor();
         cursor.setPosition( error_pos );
         this->setTextCursor( cursor );
+
 }
 
 void LegacyEditor::unhighlightLastError()
@@ -156,7 +171,7 @@ void LegacyEditor::setHighlightScheme(const QString &name)
 QSize LegacyEditor::sizeHint() const
 {
 	if (initialSizeHint.width() <= 0) {
-		return QTextEdit::sizeHint();
+		return /*QTextEdit::*/textedit->sizeHint();
 	} else {
 		return initialSizeHint;
 	}
@@ -166,7 +181,52 @@ void LegacyEditor::setInitialSizeHint(const QSize &size)
 {
 	initialSizeHint = size;
 }
+ 
+void LegacyEditor::setTabStopWidth(int width)
+{
+	textedit->setTabStopWidth(width);
+}
 
+QString LegacyEditor::toPlainText()
+{
+	return textedit->toPlainText();
+}
+QTextCursor LegacyEditor::textCursor() const
+{
+	return textedit->textCursor();
+}
+void LegacyEditor::setTextCursor (const QTextCursor &cursor)
+{
+	textedit->setTextCursor(cursor);
+}
+bool LegacyEditor::find(const QString & exp, QTextDocument::FindFlags options)
+{
+	return textedit->find(exp, options);
+}
+void LegacyEditor::insertPlainText(const QString &text)
+{
+	textedit->insertPlainText(text);
+}
+void LegacyEditor::undo()
+{
+	textedit->undo();
+}
+void LegacyEditor::redo()
+{
+	textedit->redo();
+}
+void LegacyEditor::cut()
+{
+	textedit->cut();
+}
+void LegacyEditor::copy()
+{
+	textedit->copy();
+}
+void LegacyEditor::paste()
+{
+	textedit->paste();
+}
 LegacyEditor::~LegacyEditor()
 {
 	delete highlighter;

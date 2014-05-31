@@ -166,6 +166,9 @@ bool MainWindow::undockMode = false;
 MainWindow::MainWindow(const QString &filename)
 	: root_inst("group"), font_list_dialog(NULL), tempFile(NULL), progresswidget(NULL)
 {
+	legacy = new LegacyEditor(editorDockContents);
+        editor = legacy;
+
 	setupUi(this);
 	setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
@@ -596,7 +599,7 @@ void
 MainWindow::openFile(const QString &new_filename)
 {
 	if (MainWindow::mdiMode) {
-		if (!editor->legacy->toPlainText().isEmpty()) {  //removing legacy-> cause seg fault :(
+		if (!editor->toPlainText().isEmpty()) {
 			new MainWindow(new_filename);
 			return;
 		}
@@ -1421,7 +1424,7 @@ void MainWindow::compileTopLevelDocument()
 	updateTemporalVariables();
 	resetPrintedDeprecations();
 
-	this->last_compiled_doc = editor->legacy->toPlainText(); //removing legacy-> cause seg fault :(
+	this->last_compiled_doc = editor->toPlainText();
 
 	std::string fulltext =
 		std::string(this->last_compiled_doc.toLocal8Bit().constData()) +
@@ -2010,7 +2013,7 @@ void MainWindow::viewModeAnimate()
 
 void MainWindow::animateUpdateDocChanged()
 {
-	QString current_doc = editor->legacy->toPlainText(); //removing legacy-> cause seg fault :(
+	QString current_doc = editor->toPlainText(); 
 	if (current_doc != last_compiled_doc)
 		animateUpdate();
 }
