@@ -3,24 +3,16 @@
 
 LegacyEditor::LegacyEditor(QWidget *parent) : Editor(parent)
 {
-/*	textediteditorLayout = new QVBoxLayout(this);
- 	textedit = new LegacyLegacyEditor(this);
-	textediteditorLayout->addWidget(textedit);
-	textedit->setAcceptRichText(false);
-*/
-//	textedit->setMinimumWidth(500);
-	
-	// This needed to avoid QTextEdit accepting filename drops as we want
-	// to handle these ourselves in MainWindow
+	legacyeditorLayout = new QVBoxLayout(this);
 	textedit = new QTextEdit(this);
+	legacyeditorLayout->addWidget(textedit);
 	textedit->setAcceptRichText(false);
 	setAcceptDrops(false);
 	this->highlighter = new Highlighter(this->textedit->document());
 }
 
 void LegacyEditor::indentSelection()
-{
-	
+{	
 	QTextCursor cursor = textCursor();
 	int p1 = cursor.selectionStart();
 	QString txt = cursor.selectedText();
@@ -35,7 +27,6 @@ void LegacyEditor::indentSelection()
 	cursor.setPosition(p1, QTextCursor::MoveAnchor);
 	cursor.setPosition(p2, QTextCursor::KeepAnchor);
 	textedit->setTextCursor(cursor);
-
 }
 
 void LegacyEditor::unindentSelection()

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <QObject>
 #include <QString>
 #include <QWidget>
@@ -28,7 +29,7 @@ public slots:
         virtual void zoomOut() { }
         virtual void setLineWrapping(bool on) { }
         virtual void setContentModified(bool y){ }
-        virtual bool isContentModified(){ } 
+        virtual bool isContentModified(){ return true; } 
         virtual void indentSelection(){ }
         virtual void unindentSelection(){ }
         virtual void commentSelection() {}
