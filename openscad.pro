@@ -288,7 +288,8 @@ HEADERS += src/typedefs.h \
            \
            src/AutoUpdater.h \
     src/renderwindow.h \
-    src/legacyeditor.h
+    src/legacyeditor.h \
+    src/scintillaeditor.h
 
 SOURCES += src/version_check.cc \
            src/ProgressWidget.cc \
@@ -373,7 +374,8 @@ SOURCES += src/version_check.cc \
            src/mainwin.cc \
     src/renderwindow.cpp \
     src/legacyeditor.cc \
-	   src/FontListDialog.cc
+	   src/FontListDialog.cc \
+    src/scintillaeditor.cpp
 
 # ClipperLib
 SOURCES += src/polyclipping/clipper.cpp

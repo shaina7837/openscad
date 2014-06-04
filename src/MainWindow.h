@@ -9,6 +9,7 @@
 #include "memory.h"
 #include "renderwindow.h"
 #include "legacyeditor.h"
+#include "scintillaeditor.h"
 #include "editor.h"
 #include <vector>
 #include <QMutex>
@@ -107,6 +108,7 @@ private:
 	void setDockWidgetTitle(QDockWidget *dockWidget, QString prefix, bool topLevel);
 
 	LegacyEditor *legacy;
+	ScintillaEditor *scintilla;
 	Editor *editor;
 
   class QMessageBox *openglbox;
