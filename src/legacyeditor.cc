@@ -1,11 +1,11 @@
 #include "legacyeditor.h"
 #include "Preferences.h"
 
-LegacyEditor::LegacyEditor(QWidget *parent) : Editor(parent)
+LegacyEditor::LegacyEditor(QWidget *parent) : EditorInterface(parent)
 {
-	legacyeditorLayout = new QVBoxLayout(this);
+//	legacyeditorLayout = new QVBoxLayout(this);
 	textedit = new QTextEdit(this);
-	legacyeditorLayout->addWidget(textedit);
+//	legacyeditorLayout->addWidget(textedit);
 	textedit->setAcceptRichText(false);
 	setAcceptDrops(false);
 	this->highlighter = new Highlighter(this->textedit->document());
