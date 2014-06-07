@@ -109,7 +109,7 @@ private:
 
 	LegacyEditor *legacy;
 	ScintillaEditor *scintilla;
-	Editor *editor;
+	EditorInterface *editor;
 
   class QMessageBox *openglbox;
         renderWindow *ren;
